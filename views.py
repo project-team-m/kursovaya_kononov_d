@@ -2,6 +2,7 @@ import os
 import re
 from chardet.universaldetector import UniversalDetector
 
+
 class File:
     def __init__(self, file_name):
         self.file_name = file_name
@@ -21,79 +22,100 @@ class File:
             open(file_name, 'rb')
             return object.__new__(cls)
         except:
-            print('File {} is not exists'.format(file_name))
             return None
 
     def write(self, text):
-        print('File: {}'.format(self.file_name))
         with open(self.file_name, 'wb') as F:
             F.write(text)
 
     def __str__(self):
-        string = ''
+        string = b''
         with open(self.file_name, 'rb') as lines:
             for line in lines:
-                string = '{}{}'.format(string, line)
+                string = string + line
 
         return string
 
 
 class Dir:
     def __init__(self, path):
+        if path == '':
+            path = '.'
         self.path = path
         self.all_files = os.listdir(path)
-        self.files = []
+        self.__files = []
         for file in self.all_files:
             if re.search(r'.txt\b', file):
                 tmp = File(file)
                 if tmp:
-                    self.files.append(tmp)
+                    self.__files.append(tmp)
 
     def __new__(cls, path):
         try:
             return object.__new__(cls)
         except:
-            print('No such directory')
             return None
 
     def show(self, ind):
         try:
-            return self.files[ind]
+            return self.__files[ind]
         except:
             return None
 
+    def show_all_files(self):
+        if self.path == '.':
+            path = 'текущей дирректории'
+        else:
+            path = 'дирректории {}'.format(self.path)
+        s = 'Файлы в {}:'.format(path)
+        if self.all_files:
+            for i in self.all_files:
+                s = '{} {}'.format(s, i)
+        else:
+            s = '{} {}'.format(s, 'Пусто')
+        return s
+
     def __str__(self):
-        files = self.all_files[0]
-        for file in self.all_files[1:]:
-            files = '{}, {}'.format(files, file)
-        return '{}\n{}'.format(self.path, files)
+        if self.path == '.':
+            path = 'текущей дирректории'
+        else:
+            path = 'дирректории {}'.format(self.path)
+        s = 'Файлы с возможностью изменения кодировки в {}:'.format(path)
+        if self.__files:
+            for i in self.__files:
+                s = '{} {}'.format(s, i.file_name)
+        else:
+            s = '{} {}'.format(s, 'Пусто')
+        return s
+
 
 class Convert:
     def __init__(self):
-        self.encoding = [
+        self.encodings = [
             'utf-8',
-            'cp500',
             'utf-16',
-            'GBK',
-            'windows-1251',
-            'ASCII',
-            'US-ASCII',
-            'Big5'
+            'utf-32',
+            'windows-1251'
         ]
 
-    def show_encode(self, text):
+    @staticmethod
+    def show_encode(text):
         detector = UniversalDetector()
         detector.feed(text)
         detector.close()
 
-        print(detector.result)
+        return detector.result['encoding']
 
-    def convert(self, text, encode):
-        return text.encode(encode)
+    @staticmethod
+    def convert(text, encoding, encoding_was):
+        text = text.decode(encoding_was)
+        text = text.encode(encoding)
+        return text
+
 
 if __name__ == '__main__':
-    a = Dir('/home/dekeyel/Projects/labs5sem/dima/oop/kurs')
+    a = Dir('')
     b = Convert()
     c = File('test.txt')
-    c.write(b.convert(c.__str__(), b.encoding[2]))
-    #print(type(b'dawdawdaw'))
+    print(b.show_encode(c.__str__()))
+    c.write(b.convert(c.__str__(), b.encodings[1], c.encoding))
